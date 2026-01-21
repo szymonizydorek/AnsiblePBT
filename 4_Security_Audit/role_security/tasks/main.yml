@@ -1,0 +1,86 @@
+---
+- name: Ensure SSH key-based authentication is enabled
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PubkeyAuthentication'
+    line: 'PubkeyAuthentication yes'
+    state: present
+  notify: Restart SSH
+
+- name: Ensure no password login
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  notify:
+    Restart SSH
+
+- name: Ensure Firewall enabled for CentOS
+  package:
+    name: firewalld
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Permit traffic in default zone for 22, 80, 443, 3000 on CentOS
+  firewalld:
+    port: "{{ item }}"
+    permanent: true
+    state: enabled
+  loop:
+    - 22/tcp
+    - 80/tcp
+    - 443/tcp
+    - 3000/tcp
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Ensure UFW enabled for Ubuntu
+  package:
+    name: ufw
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Allow access on ports 22, 80, 443, 3000 on Ubuntu
+  ufw:
+    rule: allow
+    port: '{{ item }}'
+    proto: tcp
+  loop:
+    - 22
+    - 80
+    - 443
+    - 3000
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Update all packages on CentOS
+  dnf:
+    name: '*'
+    state: latest
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Update and upgrade packages on Debian
+  apt:
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+
+- name: Install Netstat on CentOS
+  dnf:
+    name: net-tools
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Install Netstat on Debian
+  apt:
+    name: net-tools
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Ensure /etc/passwd is 644
+  file:
+    path: /etc/passwd
+    mode: '0644'
+
+- name: Ensure /etc/shadow is 640
+  file:
+    path: /etc/shadow
+    mode: '0640'

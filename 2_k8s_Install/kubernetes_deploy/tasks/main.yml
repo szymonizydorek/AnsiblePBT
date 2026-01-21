@@ -1,0 +1,69 @@
+---
+- name: Disable Swap
+  shell: |
+    swapoff -a
+    sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab #sed -i '/swap/d' /etc/fstab
+
+- name: Insert containerd modules
+  blockinfile:
+    path: /etc/modules-load.d/containerd.conf
+    create: yes
+    block: |
+      overlay
+      br_netfilter
+
+- name: Add the Kernel modules
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - overlay
+    - br_netfilter
+
+- name: Configure Kubernetes Networking
+  blockinfile:
+    path: /etc/sysctl.d/kubernetes.conf
+    create: yes
+    block: |
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+      net.ipv4.ip_forward = 1
+
+- name: Reload Configuration
+  shell: |
+    sudo sysctl --system
+
+- name: Read the hostname
+  setup:
+    filter: ansible_hostname
+
+- name: Configure kublet
+  blockinfile:
+    path: /etc/default/kublet
+    create: yes
+    block: |
+      KUBELET_EXTRA_ARGS="--cgroup-driver=cgroupfs"
+
+- name: Reload systemd and restart kubelet
+  systemd:
+    name: kubelet
+    state: restarted
+    daemon_reload: yes
+
+- name: Configure Docker
+  copy:
+    src: daemon.json
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart Docker
+
+- name: Initialize Kubernetes Control Plane
+  debug:
+    msg: |
+      "The server is now prepared to initiate the cluster:"
+      "  kubeadm init  "
+      "  --control-plane-endpoint="
+      "  --upload-certs "
+      "  --pod-network-cidr=10.200.0.0/16" 

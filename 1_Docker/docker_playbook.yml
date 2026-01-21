@@ -1,0 +1,6 @@
+---
+- name: Grafana Deployment with Docker
+  hosts: docker_group
+  become: yes
+  roles:
+    - role_docker

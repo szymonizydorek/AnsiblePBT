@@ -1,0 +1,7 @@
+---
+- name: Manage Minikube on Localhost
+  hosts: localhost
+  become: false
+  roles:
+    - install-helm
+    - devops-services

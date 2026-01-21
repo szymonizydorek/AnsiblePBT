@@ -1,0 +1,22 @@
+- name: Test Windows automation
+  hosts: Win01
+  gather_facts: no   
+  tasks:
+    - name: Create folder on Administrator Desktop
+      ansible.windows.win_file:
+        path: C:\Users\Administrator\Desktop\prosa_training_new_3
+        state: directory
+
+    - name: Create example.txt
+      ansible.windows.win_file:
+        path: C:\Users\Administrator\Desktop\prosa_training_new_3\example_file.txt
+        state: touch
+
+    - name: Get hostname
+      win_command: hostname
+      register: hostname_output
+
+    - name: Show only hostname
+      debug:
+        msg: "The hostname is {{ hostname_output.stdout }}"
+

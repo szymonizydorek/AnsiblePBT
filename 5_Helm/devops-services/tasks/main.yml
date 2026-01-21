@@ -1,0 +1,32 @@
+---
+- name: Add Jenkins Helm repo
+  kubernetes.core.helm_repository:
+    name: jenkins
+    repo_url: https://charts.jenkins.io
+
+- name: Add Grafana Helm repo
+  kubernetes.core.helm_repository:
+    name: grafana
+    repo_url: https://grafana.github.io/helm-charts
+
+- name: Verify the Repo List
+  command: helm repo list
+  register: repo_status
+
+- name: Debug Repo List
+  debug:
+    msg: "{{ repo_status.stdout }}"
+
+- name: Deploy Jenkins chart inside devops namespace
+  kubernetes.core.helm:
+    name: jenkins
+    chart_ref: jenkins/jenkins
+    release_namespace: devops
+    create_namespace: true
+
+- name: Deploy Grafana chart inside devops namespace
+  kubernetes.core.helm:
+    name: grafana
+    chart_ref: grafana/grafana
+    release_namespace: devops
+    create_namespace: true

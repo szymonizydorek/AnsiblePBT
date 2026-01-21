@@ -1,0 +1,9 @@
+---
+- name: Install Kubernetes on Control Plane
+  hosts: control_plane
+  gather_facts: yes
+  become: yes
+  roles:
+    - docker_install
+    - kubernetes_install
+    - kubernetes_deploy
